@@ -1,7 +1,6 @@
-import React, { useContext, useState } from "react";
+import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../context/userContext/user.context";
-import logo from "../assets/images/amazon-logo-transparent.png";
 import "../styles/index.css";
 import { registerUser } from "../utils/api";
 
@@ -49,7 +48,7 @@ function Register() {
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <img
           className="mx-auto h-12 w-auto cursor-pointer"
-          src={logo}
+          src="/images/amazon-logo-transparent.png"
           alt="Amazon"
           onClick={() => navigate("/")}
         />
