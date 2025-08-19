@@ -5,7 +5,6 @@ const API_BASE_URL = "https://nodejs2323.vercel.app/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000,
   withCredentials: false,
 });
 
