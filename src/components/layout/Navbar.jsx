@@ -1,10 +1,9 @@
-import React, { useContext, useState } from "react";
+import { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FiSearch, FiShoppingCart, FiUser, FiMenu, FiX } from "react-icons/fi";
 import { IoLocationOutline } from "react-icons/io5";
 import { UserContext } from "../../context/userContext/user.context";
 import { CartContext } from "../../context/cartContext/cart.context";
-import logo from "../../assets/images/amazon-logo-transparent.png";
 
 export default function Navbar() {
   const { user, logout } = useContext(UserContext);
@@ -53,7 +52,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex-shrink-0 mr-6">
             <img
-              src={logo}
+              src="/images/amazon-logo-transparent.png"
               alt="Amazon"
               className="h-8 w-auto filter brightness-0 invert"
             />
