@@ -6,7 +6,10 @@ const API_BASE_URL = "https://nodejs2323.vercel.app/api";
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
-  withCredentials: false,
+  withCredentials: true, // Change this to true since your server expects credentials
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
 api.interceptors.request.use((config) => {
