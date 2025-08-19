@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    font-family: 'IBM Plex Sans', sans-serif;
+}
+
+/* login page  */
+.login img{
+    width: 100px;
+    height: 100px;
+}
