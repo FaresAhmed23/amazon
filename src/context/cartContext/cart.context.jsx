@@ -211,6 +211,7 @@ export default function CartProvider({ children }) {
         getCartTotal,
         isLoading,
         fetchCart,
+        setIsLoading,
       }}
     >
       {children}

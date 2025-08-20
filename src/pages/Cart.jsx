@@ -21,6 +21,7 @@ export default function Cart() {
     getCartTotal,
     isLoading,
     clearCart,
+    setIsLoading,
   } = useContext(CartContext);
   const { addToWishlist } = useContext(WishlistContext);
   const { user } = useContext(UserContext);
