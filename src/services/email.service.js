@@ -5,7 +5,7 @@ import emailjs from "@emailjs/browser";
 emailjs.init("Ugw_neuMeQwzazkDv");
 
 const SERVICE_ID = "service_juusocr";
-const TEMPLATE_ID = "template_password_reset"; // You'll create this template
+const TEMPLATE_ID = "template_tfexpim";
 const PUBLIC_KEY = "Ugw_neuMeQwzazkDv";
 
 export const sendPasswordResetEmail = async (
