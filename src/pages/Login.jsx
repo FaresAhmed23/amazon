@@ -1,5 +1,5 @@
 import { useContext, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { UserContext } from "../context/userContext/user.context";
 import "../styles/index.css";
 import { loginUser } from "../utils/api";
@@ -111,12 +111,12 @@ function Login() {
               </div>
 
               <div className="text-sm">
-                <a
-                  href="#"
-                  className="font-medium text-blue-500 hover:text-blue-600"
+                <Link
+                  to="/auth/forgot-password"
+                  className="font-medium text-blue-500 hover:text-blue-600 hover:underline"
                 >
                   Forgot your password?
-                </a>
+                </Link>
               </div>
             </div>
 

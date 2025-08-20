@@ -14,6 +14,8 @@ import Account from "./pages/Account";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const router = createBrowserRouter([
   {
@@ -96,6 +98,8 @@ const router = createBrowserRouter([
     children: [
       { path: "login", element: <Login /> },
       { path: "signup", element: <Register /> },
+      { path: "forgot-password", element: <ForgotPassword /> },
+      { path: "reset-password/:resettoken", element: <ResetPassword /> },
     ],
   },
   {

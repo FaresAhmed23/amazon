@@ -271,3 +271,36 @@ export const getUserById = async (id) => {
     throw error;
   }
 };
+
+export const forgotPassword = async (email) => {
+  try {
+    const res = await api.post("/auth/forgot-password", { email });
+    return res.data;
+  } catch (error) {
+    console.error("Error in forgot password:", error);
+    throw error;
+  }
+};
+
+export const resetPassword = async (resetToken, password, confirmPassword) => {
+  try {
+    const res = await api.put(`/auth/reset-password/${resetToken}`, {
+      password,
+      confirmPassword,
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Error in reset password:", error);
+    throw error;
+  }
+};
+
+export const validateResetToken = async (resetToken) => {
+  try {
+    const res = await api.get(`/auth/reset-password/${resetToken}`);
+    return res.data;
+  } catch (error) {
+    console.error("Error validating reset token:", error);
+    throw error;
+  }
+};
