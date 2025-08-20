@@ -78,7 +78,7 @@ export default function Navbar() {
             <img
               src="/images/amazon-logo-transparent.png"
               alt="Amazon"
-              className="h-6 sm:h-8 w-auto filter brightness-0 invert"
+              className="h-16 sm:h-20 w-auto filter brightness-0 invert"
             />
           </Link>
 
