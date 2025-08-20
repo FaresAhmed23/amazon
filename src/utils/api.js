@@ -6,7 +6,7 @@ const API_BASE_URL = "https://nodejs2323.vercel.app/api";
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
-  withCredentials: true, // Change this to true since your server expects credentials
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
@@ -111,6 +111,16 @@ export const removeFromCart = async (productId) => {
   }
 };
 
+export const clearCart = async () => {
+  try {
+    const res = await api.delete("/cart/clear");
+    return res.data;
+  } catch (error) {
+    console.error("Error clearing cart:", error);
+    throw error;
+  }
+};
+
 // ================== Auth / Users ==================
 export const registerUser = async (userData) => {
   try {
@@ -133,9 +143,9 @@ export const loginUser = async (credentials) => {
 };
 
 // ================== Orders ==================
-export const checkout = async () => {
+export const checkout = async (checkoutData) => {
   try {
-    const res = await api.post("/orders/checkout");
+    const res = await api.post("/orders/checkout", checkoutData);
     return res.data;
   } catch (error) {
     console.error("Error during checkout:", error);
@@ -153,39 +163,17 @@ export const getOrders = async () => {
   }
 };
 
-// Utility functions for fake store API (if needed)
-export const getUserCart = async (userId) => {
+export const getOrderById = async (orderId) => {
   try {
-    const res = await axios.get(
-      `https://fakestoreapi.com/carts/user/${userId}`
-    );
+    const res = await api.get(`/orders/${orderId}`);
     return res.data;
   } catch (error) {
-    console.error(`Error fetching cart for user ${userId}:`, error);
+    console.error("Error fetching order:", error);
     throw error;
   }
 };
 
-export const getAllUsers = async () => {
-  try {
-    const res = await axios.get(`https://fakestoreapi.com/users`);
-    return res.data;
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    throw error;
-  }
-};
-
-export const getUserById = async (id) => {
-  try {
-    const res = await axios.get(`https://fakestoreapi.com/users/${id}`);
-    return res.data;
-  } catch (error) {
-    console.error(`Error fetching user ${id}:`, error);
-    throw error;
-  }
-};
-
+// ================== Wishlist ==================
 export const getWishlist = async () => {
   try {
     const res = await api.get("/wishlist");
@@ -220,6 +208,7 @@ export const removeFromWishlist = async (productId) => {
   }
 };
 
+// ================== User Profile ==================
 export const getUserProfile = async () => {
   try {
     const res = await api.get("/user/profile");
@@ -250,32 +239,35 @@ export const changePassword = async (passwordData) => {
   }
 };
 
-export const getOrderById = async (orderId) => {
+// Utility functions for fake store API (if needed)
+export const getUserCart = async (userId) => {
   try {
-    const res = await api.get(`/orders/${orderId}`);
+    const res = await axios.get(
+      `https://fakestoreapi.com/carts/user/${userId}`
+    );
     return res.data;
   } catch (error) {
-    console.error("Error fetching order:", error);
+    console.error(`Error fetching cart for user ${userId}:`, error);
     throw error;
   }
 };
 
-export const createCheckoutSession = async (checkoutData) => {
+export const getAllUsers = async () => {
   try {
-    const res = await api.post("/orders/create-checkout-session", checkoutData);
+    const res = await axios.get(`https://fakestoreapi.com/users`);
     return res.data;
   } catch (error) {
-    console.error("Error creating checkout session:", error);
+    console.error("Error fetching users:", error);
     throw error;
   }
 };
 
-export const clearCart = async () => {
+export const getUserById = async (id) => {
   try {
-    const res = await api.delete("/cart/clear");
+    const res = await axios.get(`https://fakestoreapi.com/users/${id}`);
     return res.data;
   } catch (error) {
-    console.error("Error clearing cart:", error);
+    console.error(`Error fetching user ${id}:`, error);
     throw error;
   }
 };

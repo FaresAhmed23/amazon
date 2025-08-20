@@ -16,7 +16,6 @@ export default function CartProvider({ children }) {
   const [cart, setCart] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch cart on user login
   useEffect(() => {
     if (token && user) {
       fetchCart();
@@ -31,7 +30,6 @@ export default function CartProvider({ children }) {
       const data = await getCart();
 
       if (data.items && data.items.length > 0) {
-        // Enrich cart items with product details
         const enrichedItems = await Promise.all(
           data.items.map(async (item) => {
             try {
@@ -80,20 +78,15 @@ export default function CartProvider({ children }) {
     try {
       setIsLoading(true);
 
-      // Get product details first for immediate feedback
       const product = await getProductById(productId);
 
-      // Add to backend
       await apiAddToCart(productId, quantity);
-
-      // Update local cart
       setCart((prevCart) => {
         const existingItemIndex = prevCart.findIndex(
           (item) => item.productId === productId
         );
 
         if (existingItemIndex >= 0) {
-          // Update existing item
           const updatedCart = [...prevCart];
           updatedCart[existingItemIndex] = {
             ...updatedCart[existingItemIndex],
@@ -101,7 +94,6 @@ export default function CartProvider({ children }) {
           };
           return updatedCart;
         } else {
-          // Add new item
           return [
             ...prevCart,
             {
@@ -118,7 +110,6 @@ export default function CartProvider({ children }) {
         }
       });
 
-      // Success feedback
       toast.success(
         <div className="flex items-center space-x-2">
           <img
@@ -150,7 +141,6 @@ export default function CartProvider({ children }) {
       setIsLoading(true);
       await removeFromCart(productId);
 
-      // Update local cart
       setCart((prevCart) =>
         prevCart.filter((item) => item.productId !== productId)
       );
@@ -171,11 +161,9 @@ export default function CartProvider({ children }) {
     }
 
     try {
-      // Remove item first, then add with new quantity
       await removeFromCart(productId);
       await apiAddToCart(productId, newQuantity);
 
-      // Update local cart
       setCart((prevCart) =>
         prevCart.map((item) =>
           item.productId === productId

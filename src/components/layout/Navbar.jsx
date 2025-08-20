@@ -39,7 +39,7 @@ export default function Navbar() {
 
   return (
     <header className="bg-gray-900 text-white">
-      {/* Top bar - Hidden on mobile */}
+      {/* Top bar */}
       <div className="bg-gray-800 hidden md:block">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-8 text-xs">
@@ -82,7 +82,7 @@ export default function Navbar() {
             />
           </Link>
 
-          {/* Location - Hidden on mobile */}
+          {/* Location */}
           <div className="hidden lg:flex items-center text-sm mr-4 hover:text-yellow-400 cursor-pointer transition-colors">
             <IoLocationOutline className="text-lg mr-1" />
             <div>
@@ -129,7 +129,7 @@ export default function Navbar() {
               <FiSearch className="w-5 h-5" />
             </button>
 
-            {/* Language selector - Hidden on mobile */}
+            {/* Language selector */}
             <button className="hidden sm:flex items-center text-xs hover:text-yellow-400 transition-colors">
               <span className="w-5 h-3 mr-1 text-xs">🇺🇸</span>
               <span className="hidden lg:block">EN</span>
@@ -186,7 +186,7 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Orders - Hidden on mobile */}
+            {/* Orders */}
             <Link
               to="/orders"
               className="hidden lg:flex flex-col items-center text-xs hover:text-yellow-400 transition-colors p-1"
@@ -247,7 +247,7 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* Secondary navigation - Horizontal scroll on mobile */}
+      {/* Secondary navigation */}
       <div className="bg-gray-800 border-t border-gray-700">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
           <div className="flex items-center h-8 sm:h-10 space-x-4 sm:space-x-6 text-sm overflow-x-auto scrollbar-hide">
