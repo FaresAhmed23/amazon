@@ -78,52 +78,12 @@ export default function Cart() {
     toast.success("Discount removed");
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (!user) {
       navigate("/auth/login");
       return;
     }
-
-    try {
-      setIsLoading(true);
-
-      const shippingAddress = {
-        name: user.name || "John Doe",
-        street: "123 Main Street",
-        city: "Sample City",
-        state: "Sample State",
-        zipCode: "12345",
-        country: "United States",
-        phone: user.phone || "555-0123",
-      };
-
-      // Simple checkout API call
-      const response = await fetch(`${API_BASE_URL}/orders/checkout`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
-          shippingAddress,
-          paymentMethod: "Credit Card",
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast.success("Order placed successfully! 🎉");
-        navigate("/order-success");
-      } else {
-        throw new Error(data.message);
-      }
-    } catch (error) {
-      console.error("Checkout error:", error);
-      toast.error("Checkout failed. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+    navigate("/checkout");
   };
 
   if (isLoading && cart.length === 0) {
