@@ -5,10 +5,10 @@ import {
   FiPackage,
   FiTruck,
   FiCheck,
-  FiClock,
   FiMapPin,
   FiPhone,
   FiMail,
+  FiCreditCard1,
 } from "react-icons/fi";
 import { getOrderById, getProductById } from "../utils/api";
 import toast from "react-hot-toast";
