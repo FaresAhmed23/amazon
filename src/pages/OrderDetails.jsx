@@ -8,7 +8,7 @@ import {
   FiMapPin,
   FiPhone,
   FiMail,
-  FiCreditCard1,
+  FiCreditCard,
 } from "react-icons/fi";
 import { getOrderById, getProductById } from "../utils/api";
 import toast from "react-hot-toast";
@@ -329,7 +329,7 @@ export default function OrderDetails() {
               <h3 className="font-bold text-gray-900 mb-4">Payment Method</h3>
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                  <FiCreditCard1 className="w-4 h-4 text-blue-600" />
+                  <FiCreditCard className="w-4 h-4 text-blue-600" />
                 </div>
                 <div className="text-sm">
                   <p className="font-medium text-gray-900">
