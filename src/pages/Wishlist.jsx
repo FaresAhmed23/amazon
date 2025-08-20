@@ -1,12 +1,67 @@
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { FiHeart, FiShoppingCart, FiX, FiStar } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { WishlistContext } from "../context/wishlistContext/wishlist.context";
 import { CartContext } from "../context/cartContext/cart.context";
+import { getProducts } from "../utils/api";
 
 export default function Wishlist() {
   const { wishlist, removeItem, isLoading } = useContext(WishlistContext);
   const { addToCart } = useContext(CartContext);
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
+  const [loadingRecommended, setLoadingRecommended] = useState(false);
+
+  useEffect(() => {
+    if (wishlist.length > 0) {
+      fetchRecommendedProducts();
+    }
+  }, [wishlist]);
+
+  const fetchRecommendedProducts = async () => {
+    try {
+      setLoadingRecommended(true);
+      const allProducts = await getProducts();
+
+      // Get categories from wishlist items
+      const wishlistCategories = [
+        ...new Set(wishlist.map((item) => item.category)),
+      ];
+
+      // Filter products by categories in wishlist, exclude already wishlisted items
+      const wishlistProductIds = new Set(
+        wishlist.map((item) => item.productId)
+      );
+
+      let recommended = allProducts.filter(
+        (product) =>
+          wishlistCategories.includes(product.category) &&
+          !wishlistProductIds.has(product.id.toString())
+      );
+
+      // If not enough products from wishlist categories, add other high-rated products
+      if (recommended.length < 6) {
+        const otherProducts = allProducts
+          .filter(
+            (product) =>
+              !wishlistProductIds.has(product.id.toString()) &&
+              !wishlistCategories.includes(product.category) &&
+              product.rating &&
+              product.rating.rate >= 4.0
+          )
+          .sort((a, b) => b.rating.rate - a.rating.rate);
+
+        recommended = [...recommended, ...otherProducts];
+      }
+
+      // Shuffle and limit to 6 products
+      const shuffled = recommended.sort(() => 0.5 - Math.random());
+      setRecommendedProducts(shuffled.slice(0, 6));
+    } catch (error) {
+      console.error("Error fetching recommended products:", error);
+    } finally {
+      setLoadingRecommended(false);
+    }
+  };
 
   const handleMoveToCart = async (item) => {
     const success = await addToCart(item.productId, 1);
@@ -142,26 +197,51 @@ export default function Wishlist() {
           ))}
         </div>
 
-        {/* recommendations */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold mb-6">You might also like</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((item) => (
-              <div
-                key={item}
-                className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-              >
-                <div className="aspect-square bg-gray-100 rounded mb-2"></div>
-                <p className="text-sm text-gray-800 line-clamp-2 mb-1">
-                  Recommended product {item}
-                </p>
-                <p className="font-semibold text-sm">
-                  ${(Math.random() * 100 + 10).toFixed(2)}
-                </p>
+        {/* Dynamic Recommendations */}
+        {recommendedProducts.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold mb-6">You might also like</h2>
+            {loadingRecommended ? (
+              <div className="flex justify-center py-8">
+                <div className="text-gray-500">Loading recommendations...</div>
               </div>
-            ))}
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {recommendedProducts.map((product) => (
+                  <Link
+                    key={product.id}
+                    to={`/product/${product.id}`}
+                    className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow group"
+                  >
+                    <div className="aspect-square bg-gray-50 rounded mb-2 p-2">
+                      <img
+                        src={product.image}
+                        alt={product.title}
+                        className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                      />
+                    </div>
+                    <p className="text-sm text-gray-800 line-clamp-2 mb-1">
+                      {product.title}
+                    </p>
+                    <div className="flex items-center mb-1">
+                      {product.rating && (
+                        <>
+                          <span className="text-yellow-400 text-xs">★</span>
+                          <span className="text-xs text-gray-600 ml-1">
+                            {product.rating.rate}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    <p className="font-semibold text-sm text-green-600">
+                      ${product.price}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
