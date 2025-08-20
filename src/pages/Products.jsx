@@ -300,7 +300,7 @@ function Products() {
                 return (
                   <div
                     key={product.id}
-                    className="bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-shadow duration-200 overflow-hidden group"
+                    className="bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-shadow duration-200 overflow-hidden group relative"
                   >
                     <Link to={`/product/${product.id}`} className="block">
                       <div className="relative overflow-hidden bg-gray-50">
