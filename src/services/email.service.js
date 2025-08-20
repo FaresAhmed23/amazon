@@ -1,7 +1,5 @@
-// services/email.service.js (Frontend - create this new file)
 import emailjs from "@emailjs/browser";
 
-// Initialize EmailJS with your public key
 emailjs.init("Ugw_neuMeQwzazkDv");
 
 const SERVICE_ID = "service_juusocr";

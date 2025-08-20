@@ -1,8 +1,8 @@
-// pages/ForgotPassword.js (Update with EmailJS integration)
+// pages/ForgotPassword.js (Update the handleSubmit function)
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { forgotPassword } from "../utils/api";
-import { sendPasswordResetEmail } from "../services/email.service";
+import { sendPasswordResetEmail } from "../services/email.service"; // ✅ Import frontend EmailJS service
 import { FiMail, FiArrowLeft, FiCheck } from "react-icons/fi";
 import toast from "react-hot-toast";
 
@@ -18,25 +18,33 @@ export default function ForgotPassword() {
     setIsLoading(true);
 
     try {
+      console.log("Step 1: Calling backend API...");
+      // Step 1: Call backend to generate reset token and validate user
       const response = await forgotPassword(email);
+      console.log("Backend response:", response);
 
-      // If backend returns email data, send email via EmailJS
+      // Step 2: If user exists, send email via frontend EmailJS
       if (response.emailData) {
         try {
+          console.log("Step 2: Sending email via EmailJS...");
           await sendPasswordResetEmail(
             response.emailData.userEmail,
             response.emailData.resetUrl,
             response.emailData.userName
           );
-          toast.success("Reset email sent successfully!");
+          console.log("✅ Email sent successfully via EmailJS");
+          toast.success("Password reset email sent successfully!");
         } catch (emailError) {
-          console.error("EmailJS Error:", emailError);
-          toast.error("Email sending failed, but reset link was generated.");
+          console.error("❌ EmailJS failed:", emailError);
+          toast.error(`Failed to send email: ${emailError.message}`);
+          setError(`Email sending failed: ${emailError.message}`);
+          return; // Don't show success if email failed
         }
       }
 
       setIsSuccess(true);
     } catch (err) {
+      console.error("❌ Forgot password error:", err);
       setError(
         err.response?.data?.message ||
           "An error occurred. Please try again later."
@@ -67,20 +75,24 @@ export default function ForgotPassword() {
               </div>
 
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Check Your Email
+                Email Sent Successfully! 📧
               </h2>
 
               <p className="text-gray-600 mb-6">
-                If an account with <strong>{email}</strong> exists, we've sent a
-                password reset link to your email address.
+                We've sent a password reset link to <strong>{email}</strong>.
+                Please check your email and click the link to reset your
+                password.
               </p>
 
-              <div className="space-y-4">
-                <p className="text-sm text-gray-600">
-                  Didn't receive the email? Check your spam folder or try again
-                  in a few minutes.
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-blue-800">
+                  <strong>Check your spam/junk folder</strong> if you don't see
+                  the email in your inbox. The reset link will expire in 10
+                  minutes.
                 </p>
+              </div>
 
+              <div className="space-y-4">
                 <button
                   onClick={() => {
                     setIsSuccess(false);
@@ -88,7 +100,7 @@ export default function ForgotPassword() {
                   }}
                   className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-2 px-4 rounded-md font-medium transition-colors"
                 >
-                  Try Another Email
+                  Send to Different Email
                 </button>
 
                 <Link
@@ -138,7 +150,7 @@ export default function ForgotPassword() {
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded">
-              {error}
+              <strong>Error:</strong> {error}
             </div>
           )}
 
@@ -176,13 +188,25 @@ export default function ForgotPassword() {
               {isLoading ? (
                 <div className="flex items-center">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600 mr-2"></div>
-                  Sending...
+                  Sending Email...
                 </div>
               ) : (
-                "Continue"
+                "Send Reset Link"
               )}
             </button>
           </form>
+
+          <div className="mt-6 text-center">
+            <div className="text-sm text-gray-600">
+              <p className="mb-2">
+                💡 <strong>Demo Note:</strong>
+              </p>
+              <p className="text-xs">
+                This will send a real email to your address using EmailJS. Make
+                sure the email address you enter is valid and accessible.
+              </p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
