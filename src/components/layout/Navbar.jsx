@@ -17,7 +17,13 @@ export default function Navbar() {
   const { getCartCount } = useContext(CartContext);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchCategory, setSearchCategory] = useState("");
   const [showSearch, setShowSearch] = useState(false);
+
+  // Mobile search states
+  const [mobileSearchQuery, setMobileSearchQuery] = useState("");
+  const [mobileSearchCategory, setMobileSearchCategory] = useState("");
+
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -29,8 +35,36 @@ export default function Navbar() {
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      let searchUrl = `/products?search=${encodeURIComponent(
+        searchQuery.trim()
+      )}`;
+
+      // Add category to search if selected
+      if (searchCategory) {
+        searchUrl += `&category=${encodeURIComponent(searchCategory)}`;
+      }
+
+      navigate(searchUrl);
       setSearchQuery("");
+      setSearchCategory("");
+    }
+  };
+
+  const handleMobileSearch = (e) => {
+    e.preventDefault();
+    if (mobileSearchQuery.trim()) {
+      let searchUrl = `/products?search=${encodeURIComponent(
+        mobileSearchQuery.trim()
+      )}`;
+
+      // Add category to search if selected
+      if (mobileSearchCategory) {
+        searchUrl += `&category=${encodeURIComponent(mobileSearchCategory)}`;
+      }
+
+      navigate(searchUrl);
+      setMobileSearchQuery("");
+      setMobileSearchCategory("");
       setShowSearch(false);
     }
   };
@@ -97,8 +131,12 @@ export default function Navbar() {
             className="hidden md:flex flex-1 max-w-2xl mx-4"
           >
             <div className="flex w-full">
-              <select className="bg-gray-200 text-black px-2 lg:px-3 py-2 rounded-l-md text-sm border-r border-gray-300 focus:outline-none">
-                <option value="">All</option>
+              <select
+                value={searchCategory}
+                onChange={(e) => setSearchCategory(e.target.value)}
+                className="bg-gray-200 text-black px-2 lg:px-3 py-2 rounded-l-md text-sm border-r border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              >
+                <option value="">All Categories</option>
                 <option value="electronics">Electronics</option>
                 <option value="jewelery">Jewelry</option>
                 <option value="men's clothing">Men's Clothing</option>
@@ -108,12 +146,17 @@ export default function Navbar() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search Amazon.eg"
-                className="flex-1 px-3 py-2 text-black focus:outline-none text-sm"
+                placeholder="Search products..."
+                className="flex-1 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
               />
               <button
                 type="submit"
-                className="bg-yellow-400 hover:bg-yellow-500 px-3 lg:px-4 py-2 rounded-r-md transition-colors"
+                disabled={!searchQuery.trim()}
+                className={`px-3 lg:px-4 py-2 rounded-r-md transition-colors ${
+                  searchQuery.trim()
+                    ? "bg-yellow-400 hover:bg-yellow-500"
+                    : "bg-gray-300 cursor-not-allowed"
+                }`}
               >
                 <FiSearch className="text-black w-4 h-4" />
               </button>
@@ -223,8 +266,12 @@ export default function Navbar() {
       {/* Mobile Search Bar */}
       {showSearch && (
         <div className="md:hidden bg-gray-800 px-3 py-3 border-t border-gray-700">
-          <form onSubmit={handleSearch} className="flex">
-            <select className="bg-gray-200 text-black px-2 py-2 rounded-l-md text-sm border-r border-gray-300 focus:outline-none">
+          <form onSubmit={handleMobileSearch} className="flex">
+            <select
+              value={mobileSearchCategory}
+              onChange={(e) => setMobileSearchCategory(e.target.value)}
+              className="bg-gray-200 text-black px-2 py-2 rounded-l-md text-sm border-r border-gray-300 focus:outline-none focus:ring-2 focus:ring-yellow-400"
+            >
               <option value="">All</option>
               <option value="electronics">Electronics</option>
               <option value="jewelery">Jewelry</option>
@@ -233,15 +280,20 @@ export default function Navbar() {
             </select>
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search Amazon.eg"
-              className="flex-1 px-3 py-2 text-black focus:outline-none text-sm"
+              value={mobileSearchQuery}
+              onChange={(e) => setMobileSearchQuery(e.target.value)}
+              placeholder="Search products..."
+              className="flex-1 px-3 py-2 text-black focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
               autoFocus
             />
             <button
               type="submit"
-              className="bg-yellow-400 hover:bg-yellow-500 px-4 py-2 rounded-r-md transition-colors"
+              disabled={!mobileSearchQuery.trim()}
+              className={`px-4 py-2 rounded-r-md transition-colors ${
+                mobileSearchQuery.trim()
+                  ? "bg-yellow-400 hover:bg-yellow-500"
+                  : "bg-gray-300 cursor-not-allowed"
+              }`}
             >
               <FiSearch className="text-black w-4 h-4" />
             </button>
@@ -382,6 +434,42 @@ export default function Navbar() {
                   <div className="border-t border-gray-200 my-2"></div>
                 </>
               )}
+
+              {/* Search Section in Mobile Menu */}
+              <div className="px-6 py-2 border-b border-gray-200 mb-2">
+                <h3 className="font-semibold text-gray-800 mb-2">
+                  Quick Search
+                </h3>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => {
+                      navigate("/products?search=electronics");
+                      setIsMenuOpen(false);
+                    }}
+                    className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                  >
+                    Search Electronics
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate("/products?search=clothing");
+                      setIsMenuOpen(false);
+                    }}
+                    className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                  >
+                    Search Clothing
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate("/products?search=jewelry");
+                      setIsMenuOpen(false);
+                    }}
+                    className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                  >
+                    Search Jewelry
+                  </button>
+                </div>
+              </div>
 
               {/* Shopping Categories */}
               <div className="px-6 py-2">
