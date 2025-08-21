@@ -110,25 +110,6 @@ export default function Account() {
         },
       ],
     },
-    {
-      title: "Payment & Shopping",
-      items: [
-        {
-          icon: FiCreditCard,
-          title: "Payment Methods",
-          description: "Manage your payment options",
-          link: "/payment-methods",
-          action: null,
-        },
-        {
-          icon: FiSettings,
-          title: "Account Settings",
-          description: "Privacy, notifications, and app preferences",
-          link: "/settings",
-          action: null,
-        },
-      ],
-    },
   ];
 
   return (
