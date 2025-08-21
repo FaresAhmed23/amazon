@@ -1,4 +1,5 @@
 import { useEffect, useState, useContext } from "react";
+import { useSearchParams } from "react-router-dom";
 import "../styles/index.css";
 import { FiHeart, FiStar } from "react-icons/fi";
 import { IoIosArrowDown } from "react-icons/io";
@@ -10,12 +11,14 @@ import { CartContext } from "../context/cartContext/cart.context";
 import { WishlistContext } from "../context/wishlistContext/wishlist.context";
 
 function Products() {
+  const [searchParams] = useSearchParams();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [selectedPrices, setSelectedPrices] = useState([]);
   const [selectedRating, setSelectedRating] = useState(null);
+  const [sortBy, setSortBy] = useState("featured");
   const [addingToCart, setAddingToCart] = useState(new Set());
   const [addedToCart, setAddedToCart] = useState(new Set());
   const [wishlistProcessing, setWishlistProcessing] = useState(new Set());
@@ -56,8 +59,76 @@ function Products() {
     fetchData();
   }, []);
 
+  // Handle URL parameters
+  useEffect(() => {
+    const category = searchParams.get("category");
+    const search = searchParams.get("search");
+    const deals = searchParams.get("deals");
+    const prime = searchParams.get("prime");
+
+    let temp = [...products];
+
+    // Filter by category
+    if (category) {
+      temp = temp.filter(
+        (p) => p.category.toLowerCase() === category.toLowerCase()
+      );
+    }
+
+    // Filter by search
+    if (search) {
+      temp = temp.filter(
+        (p) =>
+          p.title.toLowerCase().includes(search.toLowerCase()) ||
+          p.description.toLowerCase().includes(search.toLowerCase()) ||
+          p.category.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    // Filter for deals (high-rated products)
+    if (deals === "true") {
+      temp = temp.filter((p) => p.rating && p.rating.rate >= 4.0);
+    }
+
+    // Filter for prime (products under $100 for "free shipping")
+    if (prime === "true") {
+      temp = temp.filter((p) => p.price <= 100);
+    }
+
+    setFilteredProducts(temp);
+  }, [products, searchParams]);
+
   useEffect(() => {
     let temp = [...products];
+
+    // Apply URL filters first
+    const category = searchParams.get("category");
+    const search = searchParams.get("search");
+    const deals = searchParams.get("deals");
+    const prime = searchParams.get("prime");
+
+    if (category) {
+      temp = temp.filter(
+        (p) => p.category.toLowerCase() === category.toLowerCase()
+      );
+    }
+
+    if (search) {
+      temp = temp.filter(
+        (p) =>
+          p.title.toLowerCase().includes(search.toLowerCase()) ||
+          p.description.toLowerCase().includes(search.toLowerCase()) ||
+          p.category.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+
+    if (deals === "true") {
+      temp = temp.filter((p) => p.rating && p.rating.rate >= 4.0);
+    }
+
+    if (prime === "true") {
+      temp = temp.filter((p) => p.price <= 100);
+    }
 
     // Filter Brand
     if (selectedBrands.length > 0) {
@@ -84,8 +155,37 @@ function Products() {
       temp = temp.filter((p) => Math.floor(p.rating.rate) >= selectedRating);
     }
 
+    // Apply sorting
+    switch (sortBy) {
+      case "price-low-high":
+        temp.sort((a, b) => a.price - b.price);
+        break;
+      case "price-high-low":
+        temp.sort((a, b) => b.price - a.price);
+        break;
+      case "rating":
+        temp.sort((a, b) => b.rating.rate - a.rating.rate);
+        break;
+      case "name-a-z":
+        temp.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case "name-z-a":
+        temp.sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      default:
+        // Featured - keep original order
+        break;
+    }
+
     setFilteredProducts(temp);
-  }, [selectedBrands, selectedPrices, selectedRating, products]);
+  }, [
+    selectedBrands,
+    selectedPrices,
+    selectedRating,
+    products,
+    sortBy,
+    searchParams,
+  ]);
 
   const handleBrandChange = (brand) => {
     setSelectedBrands((prev) =>
@@ -101,6 +201,10 @@ function Products() {
 
   const handleRatingChange = (rating) => {
     setSelectedRating(rating);
+  };
+
+  const handleSortChange = (e) => {
+    setSortBy(e.target.value);
   };
 
   const handleAddToCart = async (productId) => {
@@ -131,8 +235,38 @@ function Products() {
     return cart.some((item) => item.productId === productId.toString());
   };
 
+  // Get page title based on URL parameters
+  const getPageTitle = () => {
+    const category = searchParams.get("category");
+    const search = searchParams.get("search");
+    const deals = searchParams.get("deals");
+    const prime = searchParams.get("prime");
+
+    if (deals === "true") return "Today's Deals";
+    if (prime === "true") return "Prime Products";
+    if (category)
+      return `${category.charAt(0).toUpperCase() + category.slice(1)} Products`;
+    if (search) return `Search results for "${search}"`;
+    return "All Products";
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+      {/* Page Title */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">{getPageTitle()}</h1>
+        {searchParams.get("deals") === "true" && (
+          <p className="text-gray-600 mt-1">
+            High-rated products with great reviews
+          </p>
+        )}
+        {searchParams.get("prime") === "true" && (
+          <p className="text-gray-600 mt-1">
+            Products with fast shipping (under $100)
+          </p>
+        )}
+      </div>
+
       {/* Mobile filters toggle */}
       <div className="md:hidden mb-4">
         <button
@@ -277,18 +411,26 @@ function Products() {
             </p>
             <div className="flex items-center gap-2">
               <label className="text-sm text-gray-600">Sort by:</label>
-              <select className="border border-gray-300 rounded px-3 py-1 text-sm">
-                <option>Featured</option>
-                <option>Price: Low to High</option>
-                <option>Price: High to Low</option>
-                <option>Customer Reviews</option>
+              <select
+                value={sortBy}
+                onChange={handleSortChange}
+                className="border border-gray-300 rounded px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="featured">Featured</option>
+                <option value="price-low-high">Price: Low to High</option>
+                <option value="price-high-low">Price: High to Low</option>
+                <option value="rating">Customer Reviews</option>
+                <option value="name-a-z">Name: A to Z</option>
+                <option value="name-z-a">Name: Z to A</option>
               </select>
             </div>
           </div>
 
           {filteredProducts.length === 0 ? (
             <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">Loading products...</p>
+              <p className="text-gray-500 text-lg">
+                No products found matching your criteria.
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

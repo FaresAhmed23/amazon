@@ -98,10 +98,11 @@ export default function Navbar() {
           >
             <div className="flex w-full">
               <select className="bg-gray-200 text-black px-2 lg:px-3 py-2 rounded-l-md text-sm border-r border-gray-300 focus:outline-none">
-                <option>All</option>
-                <option>Electronics</option>
-                <option>Clothing</option>
-                <option>Books</option>
+                <option value="">All</option>
+                <option value="electronics">Electronics</option>
+                <option value="jewelery">Jewelry</option>
+                <option value="men's clothing">Men's Clothing</option>
+                <option value="women's clothing">Women's Clothing</option>
               </select>
               <input
                 type="text"
@@ -224,10 +225,11 @@ export default function Navbar() {
         <div className="md:hidden bg-gray-800 px-3 py-3 border-t border-gray-700">
           <form onSubmit={handleSearch} className="flex">
             <select className="bg-gray-200 text-black px-2 py-2 rounded-l-md text-sm border-r border-gray-300 focus:outline-none">
-              <option>All</option>
-              <option>Electronics</option>
-              <option>Clothing</option>
-              <option>Books</option>
+              <option value="">All</option>
+              <option value="electronics">Electronics</option>
+              <option value="jewelery">Jewelry</option>
+              <option value="men's clothing">Men's Clothing</option>
+              <option value="women's clothing">Women's Clothing</option>
             </select>
             <input
               type="text"
@@ -283,13 +285,13 @@ export default function Navbar() {
               Women's Fashion
             </Link>
             <Link
-              to="/deals"
+              to="/products?deals=true"
               className="hover:text-yellow-400 whitespace-nowrap transition-colors"
             >
               Today's Deals
             </Link>
             <Link
-              to="/prime"
+              to="/products?prime=true"
               className="hover:text-yellow-400 whitespace-nowrap transition-colors"
             >
               Prime
@@ -428,11 +430,19 @@ export default function Navbar() {
 
               {/* Other Links */}
               <Link
-                to="/deals"
+                to="/products?deals=true"
                 className="flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Today's Deals
+              </Link>
+
+              <Link
+                to="/products?prime=true"
+                className="flex items-center px-6 py-3 text-gray-700 hover:bg-gray-100"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Prime Products
               </Link>
 
               <Link
