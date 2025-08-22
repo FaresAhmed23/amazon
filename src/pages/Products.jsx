@@ -31,19 +31,26 @@ function Products() {
   } = useContext(WishlistContext);
 
   const handleWishlistToggle = async (productId) => {
-    setWishlistProcessing((prev) => new Set(prev).add(productId));
-
-    if (isInWishlist(productId)) {
-      await removeFromWishlist(productId.toString());
-    } else {
-      await addToWishlist(productId);
+    const id = productId.toString();
+    setWishlistProcessing((prev) => new Set(prev).add(id));
+    const inWishlist = isInWishlist(id);
+    try {
+      if (inWishlist) {
+        // remove
+        await removeFromWishlist(id);
+      } else {
+        // added
+        await addToWishlist(id);
+      }
+    } catch (error) {
+      console.error("Wishlist update failed:", error);
+    } finally {
+      setWishlistProcessing((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
+      });
     }
-
-    setWishlistProcessing((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(productId);
-      return newSet;
-    });
   };
 
   useEffect(() => {
@@ -531,19 +538,21 @@ function Products() {
 
                       <button
                         onClick={() => handleWishlistToggle(product.id)}
-                        disabled={wishlistProcessing.has(product.id)}
+                        disabled={wishlistProcessing.has(product.id.toString())}
                         className={`absolute top-2 right-2 p-2 rounded-full shadow-md transition-colors ${
-                          isInWishlist(product.id)
+                          isInWishlist(product.id.toString())
                             ? "bg-red-100 text-red-600"
                             : "bg-white text-gray-600 hover:text-red-600"
                         }`}
                       >
-                        {wishlistProcessing.has(product.id) ? (
+                        {wishlistProcessing.has(product.id.toString()) ? (
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
                         ) : (
                           <FiHeart
                             className={`w-4 h-4 ${
-                              isInWishlist(product.id) ? "fill-current" : ""
+                              isInWishlist(product.id.toString())
+                                ? "fill-current"
+                                : ""
                             }`}
                           />
                         )}

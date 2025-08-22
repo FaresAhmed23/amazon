@@ -6,6 +6,7 @@ import {
   getCategories,
 } from "../utils/api";
 import LoadingSpinner from "../components/LoadingSpinner";
+// mg
 
 function Home() {
   const [topDeals, setTopDeals] = useState([]);
