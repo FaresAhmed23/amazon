@@ -8,6 +8,8 @@ import {
   FiCamera,
   FiAlertCircle,
   FiCheck,
+  FiUpload,
+  FiX,
 } from "react-icons/fi";
 import { getUserProfile, updateUserProfile } from "../utils/api";
 import { UserContext } from "../context/userContext/user.context";
