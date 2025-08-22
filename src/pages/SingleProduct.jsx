@@ -493,6 +493,7 @@ function SingleProduct() {
       </div>
 
       {/* Dynamic Related Products */}
+      {/* Dynamic Related Products */}
       <div className="mt-12">
         <h2 className="text-2xl font-bold mb-6">
           Customers who viewed this item also viewed
@@ -513,57 +514,102 @@ function SingleProduct() {
           </div>
         ) : relatedProducts.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {relatedProducts.map((relatedProduct) => (
-              <Link
-                key={relatedProduct.id}
-                to={`/product/${relatedProduct.id}`}
-                className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 hover:border-gray-300 group"
-              >
-                <div className="aspect-square bg-gray-50 rounded mb-3 overflow-hidden flex items-center justify-center">
-                  <img
-                    src={relatedProduct.image}
-                    alt={relatedProduct.title}
-                    className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-200"
-                    onError={(e) => {
-                      console.log(
-                        `Image failed to load for product ${relatedProduct.id}:`,
-                        relatedProduct.image
-                      );
-                      e.target.src =
-                        "https://via.placeholder.com/200x200?text=Product+Image";
-                      e.target.onerror = null; // Prevent infinite loop
-                    }}
-                    onLoad={(e) => {
-                      console.log(
-                        `Image loaded successfully for product ${relatedProduct.id}`
-                      );
-                    }}
-                    loading="lazy"
-                  />
-                </div>
-                <p className="text-sm text-gray-800 line-clamp-2 mb-2 leading-tight">
-                  {relatedProduct.title}
-                </p>
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold text-sm text-gray-900">
-                    ${relatedProduct.price?.toFixed(2)}
+            {relatedProducts.map((relatedProduct, index) => {
+              const [imageError, setImageError] = useState(false);
+              const [imageLoading, setImageLoading] = useState(true);
+              const [retryCount, setRetryCount] = useState(0);
+              const [currentImageSrc, setCurrentImageSrc] = useState(
+                relatedProduct.image
+              );
+
+              const handleImageError = () => {
+                console.log(
+                  `Image load failed for product ${
+                    relatedProduct.id
+                  } (attempt ${retryCount + 1})`
+                );
+
+                if (retryCount < 2) {
+                  // Retry with a delay
+                  setTimeout(() => {
+                    setRetryCount((prev) => prev + 1);
+                    setCurrentImageSrc(
+                      `${relatedProduct.image}?retry=${
+                        retryCount + 1
+                      }&t=${Date.now()}`
+                    );
+                  }, (index + 1) * 500); // Staggered delay
+                } else {
+                  setImageError(true);
+                  setImageLoading(false);
+                }
+              };
+
+              const handleImageLoad = () => {
+                console.log(
+                  `Image successfully loaded for product ${relatedProduct.id}`
+                );
+                setImageLoading(false);
+                setImageError(false);
+              };
+
+              return (
+                <Link
+                  key={relatedProduct.id}
+                  to={`/product/${relatedProduct.id}`}
+                  className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 hover:border-gray-300 group"
+                >
+                  <div className="aspect-square bg-gray-50 rounded mb-3 overflow-hidden flex items-center justify-center relative">
+                    {imageLoading && !imageError && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                        <div className="animate-pulse bg-gray-200 w-full h-full rounded"></div>
+                      </div>
+                    )}
+
+                    {imageError ? (
+                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 text-gray-500">
+                        <div className="text-center p-2">
+                          <div className="text-2xl mb-1">🖼️</div>
+                          <div className="text-xs">Image not available</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <img
+                        src={currentImageSrc}
+                        alt={relatedProduct.title}
+                        className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-200"
+                        onError={handleImageError}
+                        onLoad={handleImageLoad}
+                        loading="lazy"
+                        crossOrigin="anonymous"
+                        referrerPolicy="no-referrer"
+                      />
+                    )}
+                  </div>
+                  <p className="text-sm text-gray-800 line-clamp-2 mb-2 leading-tight">
+                    {relatedProduct.title}
                   </p>
-                  {relatedProduct.rating?.rate && (
-                    <div className="flex items-center gap-1">
-                      <FiStar className="w-3 h-3 text-yellow-400 fill-current" />
-                      <span className="text-xs text-gray-600">
-                        {relatedProduct.rating.rate.toFixed(1)}
-                      </span>
-                    </div>
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-sm text-gray-900">
+                      ${relatedProduct.price?.toFixed(2)}
+                    </p>
+                    {relatedProduct.rating?.rate && (
+                      <div className="flex items-center gap-1">
+                        <FiStar className="w-3 h-3 text-yellow-400 fill-current" />
+                        <span className="text-xs text-gray-600">
+                          {relatedProduct.rating.rate.toFixed(1)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  {relatedProduct.category && (
+                    <p className="text-xs text-gray-500 mt-1 capitalize">
+                      {relatedProduct.category}
+                    </p>
                   )}
-                </div>
-                {relatedProduct.category && (
-                  <p className="text-xs text-gray-500 mt-1 capitalize">
-                    {relatedProduct.category}
-                  </p>
-                )}
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         ) : (
           <div className="text-center py-8">
