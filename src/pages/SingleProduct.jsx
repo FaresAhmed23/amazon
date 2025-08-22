@@ -493,7 +493,6 @@ function SingleProduct() {
       </div>
 
       {/* Dynamic Related Products */}
-      {/* Dynamic Related Products */}
       <div className="mt-12">
         <h2 className="text-2xl font-bold mb-6">
           Customers who viewed this item also viewed
