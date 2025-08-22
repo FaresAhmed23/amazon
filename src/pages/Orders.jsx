@@ -1,13 +1,25 @@
-import { useState, useEffect } from "react";
-import { FiPackage, FiTruck, FiCheck, FiClock, FiEye } from "react-icons/fi";
+import { useState, useEffect, useContext } from "react";
+import {
+  FiPackage,
+  FiTruck,
+  FiCheck,
+  FiClock,
+  FiEye,
+  FiShoppingCart,
+} from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { getOrders, getProductById } from "../utils/api";
+import { CartContext } from "../context/cartContext/cart.context";
 import toast from "react-hot-toast";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("all");
+  const [buyingAgain, setBuyingAgain] = useState(new Set());
+
+  // Add CartContext
+  const { addToCart } = useContext(CartContext);
 
   useEffect(() => {
     fetchOrders();
@@ -29,6 +41,8 @@ export default function Orders() {
                   title: product.title,
                   image: product.image,
                   price: product.price,
+                  category: product.category,
+                  rating: product.rating,
                 };
               } catch (error) {
                 return {
@@ -53,6 +67,78 @@ export default function Orders() {
       toast.error("Failed to load orders");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle Buy Again functionality
+  const handleBuyAgain = async (order) => {
+    setBuyingAgain((prev) => new Set(prev).add(order._id));
+
+    try {
+      let successCount = 0;
+      let failCount = 0;
+      const totalItems = order.items.length;
+
+      // Show loading toast
+      const loadingToast = toast.loading(
+        `Adding ${totalItems} item${totalItems > 1 ? "s" : ""} to cart...`
+      );
+
+      // Add each item to cart
+      for (const item of order.items) {
+        try {
+          const success = await addToCart(item.productId, item.quantity);
+          if (success) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch (error) {
+          console.error(`Failed to add item ${item.productId} to cart:`, error);
+          failCount++;
+        }
+      }
+
+      // Dismiss loading toast
+      toast.dismiss(loadingToast);
+
+      // Show result toast
+      if (successCount === totalItems) {
+        toast.success(
+          <div className="flex items-center space-x-2">
+            <FiShoppingCart className="w-5 h-5" />
+            <div>
+              <p className="font-semibold">All items added to cart!</p>
+              <p className="text-sm text-gray-600">
+                {successCount} item{successCount > 1 ? "s" : ""} from order #
+                {order._id.slice(-8)}
+              </p>
+            </div>
+          </div>,
+          { duration: 4000 }
+        );
+      } else if (successCount > 0) {
+        toast.success(
+          <div>
+            <p className="font-semibold">Partially added to cart</p>
+            <p className="text-sm text-gray-600">
+              {successCount} of {totalItems} items added successfully
+            </p>
+          </div>,
+          { duration: 4000 }
+        );
+      } else {
+        toast.error("Failed to add items to cart. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error in buy again:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setBuyingAgain((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(order._id);
+        return newSet;
+      });
     }
   };
 
@@ -259,8 +345,26 @@ export default function Orders() {
                           Return Items
                         </button>
                       )}
-                      <button className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 rounded-lg text-sm font-medium text-black">
-                        Buy Again
+                      <button
+                        onClick={() => handleBuyAgain(order)}
+                        disabled={buyingAgain.has(order._id)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 ${
+                          buyingAgain.has(order._id)
+                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            : "bg-yellow-400 hover:bg-yellow-500 text-black"
+                        }`}
+                      >
+                        {buyingAgain.has(order._id) ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin"></div>
+                            <span>Adding...</span>
+                          </>
+                        ) : (
+                          <>
+                            <FiShoppingCart className="w-4 h-4" />
+                            <span>Buy Again</span>
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
