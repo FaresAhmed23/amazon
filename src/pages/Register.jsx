@@ -21,7 +21,7 @@ function Register() {
 
   // Validation patterns
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+  const phoneRegex = /^01[0-2]\s\d{1,8}$/;
   const nameRegex = /^[a-zA-Z\s]{2,50}$/;
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/;
 
@@ -323,7 +323,7 @@ function Register() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   className={getFieldClasses("phone")}
-                  placeholder="+1 (555) 123-4567"
+                  placeholder="01012345678"
                   aria-invalid={!!getFieldError("phone")}
                   aria-describedby={
                     getFieldError("phone") ? "phone-error" : undefined

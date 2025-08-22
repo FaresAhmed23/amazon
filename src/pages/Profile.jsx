@@ -41,7 +41,7 @@ export default function Profile() {
   // Validation patterns
   const nameRegex = /^[a-zA-Z\s]{2,50}$/;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+  const phoneRegex = /^01[0-2]\s\d{1,8}$/;
   const addressRegex = /^[a-zA-Z0-9\s,.-]{5,100}$/;
   const cityRegex = /^[a-zA-Z\s]{2,50}$/;
   const stateRegex = /^[a-zA-Z\s]{2,50}$/;
