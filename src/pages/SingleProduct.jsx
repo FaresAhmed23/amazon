@@ -1,18 +1,24 @@
 import { useState, useEffect, useContext } from "react";
 import { FiStar, FiShoppingCart, FiCheck, FiHeart } from "react-icons/fi";
-import { IoArrowDownSharp, IoLocationSharp } from "react-icons/io5";
+import { IoLocationSharp } from "react-icons/io5";
 import { GrSecure } from "react-icons/gr";
 import { CiCreditCard1 } from "react-icons/ci";
 import { useParams, Link } from "react-router-dom";
 import { CartContext } from "../context/cartContext/cart.context";
-import { getProductById } from "../utils/api";
+import {
+  getProductById,
+  getProductsByCategory,
+  getProducts,
+} from "../utils/api";
 import "../styles/index.css";
 import { WishlistContext } from "../context/wishlistContext/wishlist.context";
 
 function SingleProduct() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingRelated, setLoadingRelated] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
@@ -23,18 +29,25 @@ function SingleProduct() {
     addToWishlist,
     isInWishlist,
     removeItem: removeFromWishlist,
+    fetchWishlist,
   } = useContext(WishlistContext);
 
   const handleAddToWishlist = async () => {
     setIsAddingToWishlist(true);
 
-    if (isInWishlist(product.id)) {
-      await removeFromWishlist(product.id.toString());
-    } else {
-      await addToWishlist(product.id);
-    }
+    try {
+      if (isInWishlist(product.id)) {
+        await removeFromWishlist(product.id.toString());
+      } else {
+        await addToWishlist(product.id);
+      }
 
-    setIsAddingToWishlist(false);
+      await fetchWishlist();
+    } catch (error) {
+      console.error("Error updating wishlist:", error);
+    } finally {
+      setIsAddingToWishlist(false);
+    }
   };
 
   useEffect(() => {
@@ -42,6 +55,8 @@ function SingleProduct() {
       try {
         const data = await getProductById(id);
         setProduct(data);
+
+        fetchRelatedProducts(data.category);
       } catch (err) {
         console.error("Error fetching product:", err);
       } finally {
@@ -50,6 +65,47 @@ function SingleProduct() {
     };
     fetchProduct();
   }, [id]);
+
+  const fetchRelatedProducts = async (category) => {
+    try {
+      setLoadingRelated(true);
+
+      let related = [];
+      try {
+        const categoryProducts = await getProductsByCategory(category);
+        related = categoryProducts
+          .filter((p) => p.id.toString() !== id)
+          .slice(0, 6);
+      } catch (error) {
+        console.log(
+          "Failed to fetch by category, fetching all products instead"
+        );
+      }
+
+      if (related.length < 6) {
+        try {
+          const allProducts = await getProducts();
+          const additionalProducts = allProducts
+            .filter(
+              (p) =>
+                p.id.toString() !== id && !related.some((rp) => rp.id === p.id)
+            )
+            .slice(0, 6 - related.length);
+
+          related = [...related, ...additionalProducts];
+        } catch (error) {
+          console.error("Error fetching additional products:", error);
+        }
+      }
+
+      setRelatedProducts(related);
+    } catch (error) {
+      console.error("Error fetching related products:", error);
+      setRelatedProducts([]);
+    } finally {
+      setLoadingRelated(false);
+    }
+  };
 
   const handleAddToCart = async () => {
     setIsAddingToCart(true);
@@ -294,31 +350,36 @@ function SingleProduct() {
                     )}
                   </button>
 
-                  <button className="w-full bg-orange-400 hover:bg-orange-500 text-white py-3 px-4 rounded-lg font-medium text-lg transition-colors">
-                    Buy Now
-                  </button>
-
                   <button
                     onClick={handleAddToWishlist}
                     disabled={isAddingToWishlist}
-                    className={`w-full border border-gray-300 hover:bg-gray-50 py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 ${
+                    className={`w-full border py-2 px-4 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
                       isInWishlist(product.id)
-                        ? "bg-red-50 text-red-600 border-red-200"
-                        : "text-gray-700"
+                        ? "bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    } ${
+                      isAddingToWishlist ? "opacity-50 cursor-not-allowed" : ""
                     }`}
                   >
                     {isAddingToWishlist ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                        <span>Updating...</span>
+                      </>
                     ) : (
-                      <FiHeart
-                        className={`w-4 h-4 ${
-                          isInWishlist(product.id) ? "fill-current" : ""
-                        }`}
-                      />
+                      <>
+                        <FiHeart
+                          className={`w-4 h-4 ${
+                            isInWishlist(product.id) ? "fill-current" : ""
+                          }`}
+                        />
+                        <span>
+                          {isInWishlist(product.id)
+                            ? "Remove from Wishlist"
+                            : "Add to Wish List"}
+                        </span>
+                      </>
                     )}
-                    {isInWishlist(product.id)
-                      ? "Remove from Wishlist"
-                      : "Add to Wish List"}
                   </button>
                 </div>
 
@@ -431,27 +492,75 @@ function SingleProduct() {
         </div>
       </div>
 
-      {/* Related Products */}
+      {/* Dynamic Related Products */}
       <div className="mt-12">
         <h2 className="text-2xl font-bold mb-6">
           Customers who viewed this item also viewed
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((item) => (
-            <div
-              key={item}
-              className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+
+        {loadingRelated ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((item) => (
+              <div
+                key={item}
+                className="bg-white border border-gray-200 rounded-lg p-4 animate-pulse"
+              >
+                <div className="aspect-square bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              </div>
+            ))}
+          </div>
+        ) : relatedProducts.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {relatedProducts.map((relatedProduct) => (
+              <Link
+                key={relatedProduct.id}
+                to={`/product/${relatedProduct.id}`}
+                className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 hover:border-gray-300 group"
+              >
+                <div className="aspect-square bg-gray-50 rounded mb-3 overflow-hidden">
+                  <img
+                    src={relatedProduct.image}
+                    alt={relatedProduct.title}
+                    className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-200"
+                  />
+                </div>
+                <p className="text-sm text-gray-800 line-clamp-2 mb-2 leading-tight">
+                  {relatedProduct.title}
+                </p>
+                <div className="flex items-center justify-between">
+                  <p className="font-semibold text-sm text-gray-900">
+                    ${relatedProduct.price?.toFixed(2)}
+                  </p>
+                  {relatedProduct.rating?.rate && (
+                    <div className="flex items-center gap-1">
+                      <FiStar className="w-3 h-3 text-yellow-400 fill-current" />
+                      <span className="text-xs text-gray-600">
+                        {relatedProduct.rating.rate.toFixed(1)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                {relatedProduct.category && (
+                  <p className="text-xs text-gray-500 mt-1 capitalize">
+                    {relatedProduct.category}
+                  </p>
+                )}
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <p className="text-gray-600">No related products found</p>
+            <Link
+              to="/products"
+              className="text-blue-600 hover:underline mt-2 inline-block"
             >
-              <div className="aspect-square bg-gray-100 rounded mb-2"></div>
-              <p className="text-sm text-gray-800 line-clamp-2 mb-1">
-                Related product {item}
-              </p>
-              <p className="font-semibold text-sm">
-                ${(Math.random() * 100 + 10).toFixed(2)}
-              </p>
-            </div>
-          ))}
-        </div>
+              Browse all products
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
