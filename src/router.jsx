@@ -35,7 +35,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "checkout", // Add this route
+        path: "checkout",
         element: (
           <ProtectedRoute>
             <Checkout />

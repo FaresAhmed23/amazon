@@ -6,6 +6,7 @@ import LoadingSpinner from "./components/LoadingSpinner";
 import UserProvider from "./context/userContext/user.context";
 import CartProvider from "./context/cartContext/cart.context";
 import WishlistProvider from "./context/wishlistContext/wishlist.context";
+import "./App.css";
 
 function App({ children }) {
   const [queryClient] = useState(

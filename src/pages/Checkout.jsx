@@ -1,6 +1,13 @@
 import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiLock, FiCreditCard, FiMapPin, FiTruck } from "react-icons/fi";
+import {
+  FiLock,
+  FiCreditCard,
+  FiMapPin,
+  FiTruck,
+  FiAlertCircle,
+  FiCheck,
+} from "react-icons/fi";
 import { CartContext } from "../context/cartContext/cart.context";
 import { UserContext } from "../context/userContext/user.context";
 import toast from "react-hot-toast";
@@ -12,6 +19,9 @@ export default function Checkout() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [deliveryOption, setDeliveryOption] = useState("standard");
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+
   const [shippingAddress, setShippingAddress] = useState({
     name: user?.name || "",
     street: "",
@@ -24,19 +34,150 @@ export default function Checkout() {
 
   const [paymentMethod, setPaymentMethod] = useState("credit-card");
 
-  // Calculate totals
-  const subtotal = getCartTotal();
-  const shippingCost =
-    deliveryOption === "express"
-      ? 9.99
-      : deliveryOption === "same-day"
-      ? 19.99
-      : 0;
-  const tax = subtotal * 0.08;
-  const total = subtotal + shippingCost + tax;
+  // Validation patterns
+  const nameRegex = /^[a-zA-Z\s]{2,50}$/;
+  const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
+  const zipRegex = /^[0-9]{5}(-[0-9]{4})?$/; // US ZIP code format
+
+  const validateField = (name, value) => {
+    const newErrors = { ...errors };
+
+    switch (name) {
+      case "name":
+        if (!value.trim()) {
+          newErrors.name = "Full name is required";
+        } else if (!nameRegex.test(value.trim())) {
+          newErrors.name = "Please enter a valid name";
+        } else {
+          delete newErrors.name;
+        }
+        break;
+
+      case "phone":
+        if (!value.trim()) {
+          newErrors.phone = "Phone number is required";
+        } else if (!phoneRegex.test(value.replace(/\s+/g, ""))) {
+          newErrors.phone = "Please enter a valid phone number";
+        } else {
+          delete newErrors.phone;
+        }
+        break;
+
+      case "street":
+        if (!value.trim()) {
+          newErrors.street = "Street address is required";
+        } else if (value.trim().length < 5) {
+          newErrors.street = "Please enter a complete address";
+        } else {
+          delete newErrors.street;
+        }
+        break;
+
+      case "city":
+        if (!value.trim()) {
+          newErrors.city = "City is required";
+        } else if (value.trim().length < 2) {
+          newErrors.city = "Please enter a valid city";
+        } else {
+          delete newErrors.city;
+        }
+        break;
+
+      case "state":
+        if (!value.trim()) {
+          newErrors.state = "State is required";
+        } else if (value.trim().length < 2) {
+          newErrors.state = "Please enter a valid state";
+        } else {
+          delete newErrors.state;
+        }
+        break;
+
+      case "zipCode":
+        if (!value.trim()) {
+          newErrors.zipCode = "ZIP code is required";
+        } else if (!zipRegex.test(value.trim())) {
+          newErrors.zipCode =
+            "Please enter a valid ZIP code (12345 or 12345-6789)";
+        } else {
+          delete newErrors.zipCode;
+        }
+        break;
+
+      case "country":
+        if (!value) {
+          newErrors.country = "Country is required";
+        } else {
+          delete newErrors.country;
+        }
+        break;
+
+      default:
+        break;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleAddressChange = (e) => {
+    const { name, value } = e.target;
+
+    // Sanitize input based on field type
+    let sanitizedValue = value;
+    if (name === "name") {
+      sanitizedValue = value.replace(/[^a-zA-Z\s]/g, "");
+    } else if (name === "phone") {
+      sanitizedValue = value.replace(/[^+\d\s-()]/g, "");
+    } else if (name === "zipCode") {
+      sanitizedValue = value.replace(/[^0-9-]/g, "");
+    }
+
+    setShippingAddress({
+      ...shippingAddress,
+      [name]: sanitizedValue,
+    });
+
+    // Real-time validation for touched fields
+    if (touched[name]) {
+      validateField(name, sanitizedValue);
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    setTouched((prev) => ({ ...prev, [name]: true }));
+    validateField(name, value);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Mark all fields as touched
+    const allTouched = Object.keys(shippingAddress).reduce((acc, key) => {
+      acc[key] = true;
+      return acc;
+    }, {});
+    setTouched(allTouched);
+
+    // Validate all fields
+    let isValid = true;
+    Object.keys(shippingAddress).forEach((key) => {
+      if (!validateField(key, shippingAddress[key])) {
+        isValid = false;
+      }
+    });
+
+    if (!isValid) {
+      toast.error("Please fix the errors below before proceeding");
+      return;
+    }
+
+    if (!paymentMethod) {
+      toast.error("Please select a payment method");
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
@@ -53,7 +194,7 @@ export default function Checkout() {
           },
           body: JSON.stringify({
             shippingAddress,
-            paymentMethod: `${paymentMethod} (Fake)`,
+            paymentMethod: `${paymentMethod} (Demo)`,
             deliveryOption,
           }),
         }
@@ -76,17 +217,47 @@ export default function Checkout() {
     }
   };
 
-  const handleAddressChange = (e) => {
-    setShippingAddress({
-      ...shippingAddress,
-      [e.target.name]: e.target.value,
-    });
+  const getFieldError = (fieldName) => {
+    return touched[fieldName] && errors[fieldName];
   };
+
+  const getFieldClasses = (fieldName) => {
+    const baseClasses = "w-full px-4 py-2 border rounded-lg focus:outline-none";
+    const hasError = getFieldError(fieldName);
+    const isValid =
+      touched[fieldName] && !errors[fieldName] && shippingAddress[fieldName];
+
+    if (hasError) {
+      return `${baseClasses} border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500`;
+    } else if (isValid) {
+      return `${baseClasses} border-green-300 focus:ring-green-500 focus:border-green-500`;
+    }
+
+    return `${baseClasses} border-gray-300 focus:ring-2 focus:ring-yellow-500`;
+  };
+
+  // Calculate totals
+  const subtotal = getCartTotal();
+  const shippingCost =
+    deliveryOption === "express"
+      ? 9.99
+      : deliveryOption === "same-day"
+      ? 19.99
+      : 0;
+  const tax = subtotal * 0.08;
+  const total = subtotal + shippingCost + tax;
 
   if (cart.length === 0) {
     navigate("/cart");
     return null;
   }
+
+  const isFormValid =
+    Object.keys(errors).length === 0 &&
+    Object.keys(shippingAddress).every(
+      (key) => shippingAddress[key].toString().trim() !== ""
+    ) &&
+    paymentMethod;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -96,7 +267,7 @@ export default function Checkout() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Left Column - Forms */}
           <div className="lg:col-span-2 space-y-8">
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit} noValidate>
               {/* Delivery Options */}
               <div className="bg-white rounded-lg shadow-sm p-6">
                 <div className="flex items-center mb-4">
@@ -161,73 +332,226 @@ export default function Checkout() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Full Name"
-                    value={shippingAddress.name}
-                    onChange={handleAddressChange}
-                    required
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
-                  />
-                  <input
-                    type="tel"
-                    name="phone"
-                    placeholder="Phone Number"
-                    value={shippingAddress.phone}
-                    onChange={handleAddressChange}
-                    required
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
-                  />
-                  <input
-                    type="text"
-                    name="street"
-                    placeholder="Street Address"
-                    value={shippingAddress.street}
-                    onChange={handleAddressChange}
-                    required
-                    className="md:col-span-2 w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
-                  />
-                  <input
-                    type="text"
-                    name="city"
-                    placeholder="City"
-                    value={shippingAddress.city}
-                    onChange={handleAddressChange}
-                    required
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
-                  />
-                  <input
-                    type="text"
-                    name="state"
-                    placeholder="State/Province"
-                    value={shippingAddress.state}
-                    onChange={handleAddressChange}
-                    required
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
-                  />
-                  <input
-                    type="text"
-                    name="zipCode"
-                    placeholder="ZIP/Postal Code"
-                    value={shippingAddress.zipCode}
-                    onChange={handleAddressChange}
-                    required
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
-                  />
-                  <select
-                    name="country"
-                    value={shippingAddress.country}
-                    onChange={handleAddressChange}
-                    required
-                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
-                  >
-                    <option value="United States">United States</option>
-                    <option value="Canada">Canada</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="Australia">Australia</option>
-                    <option value="Egypt">Egypt</option>
-                  </select>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="name"
+                      placeholder="Full Name *"
+                      value={shippingAddress.name}
+                      onChange={handleAddressChange}
+                      onBlur={handleBlur}
+                      className={getFieldClasses("name")}
+                      maxLength={50}
+                      aria-invalid={!!getFieldError("name")}
+                    />
+                    {getFieldError("name") ? (
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <FiAlertCircle className="h-5 w-5 text-red-500" />
+                      </div>
+                    ) : (
+                      touched.name &&
+                      shippingAddress.name &&
+                      !errors.name && (
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <FiCheck className="h-5 w-5 text-green-500" />
+                        </div>
+                      )
+                    )}
+                    {getFieldError("name") && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <FiAlertCircle className="w-4 h-4 mr-1" />
+                        {errors.name}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      name="phone"
+                      placeholder="Phone Number *"
+                      value={shippingAddress.phone}
+                      onChange={handleAddressChange}
+                      onBlur={handleBlur}
+                      className={getFieldClasses("phone")}
+                      aria-invalid={!!getFieldError("phone")}
+                    />
+                    {getFieldError("phone") ? (
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <FiAlertCircle className="h-5 w-5 text-red-500" />
+                      </div>
+                    ) : (
+                      touched.phone &&
+                      shippingAddress.phone &&
+                      !errors.phone && (
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <FiCheck className="h-5 w-5 text-green-500" />
+                        </div>
+                      )
+                    )}
+                    {getFieldError("phone") && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <FiAlertCircle className="w-4 h-4 mr-1" />
+                        {errors.phone}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="md:col-span-2 relative">
+                    <input
+                      type="text"
+                      name="street"
+                      placeholder="Street Address *"
+                      value={shippingAddress.street}
+                      onChange={handleAddressChange}
+                      onBlur={handleBlur}
+                      className={getFieldClasses("street")}
+                      maxLength={100}
+                      aria-invalid={!!getFieldError("street")}
+                    />
+                    {getFieldError("street") ? (
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <FiAlertCircle className="h-5 w-5 text-red-500" />
+                      </div>
+                    ) : (
+                      touched.street &&
+                      shippingAddress.street &&
+                      !errors.street && (
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <FiCheck className="h-5 w-5 text-green-500" />
+                        </div>
+                      )
+                    )}
+                    {getFieldError("street") && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <FiAlertCircle className="w-4 h-4 mr-1" />
+                        {errors.street}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="city"
+                      placeholder="City *"
+                      value={shippingAddress.city}
+                      onChange={handleAddressChange}
+                      onBlur={handleBlur}
+                      className={getFieldClasses("city")}
+                      maxLength={50}
+                      aria-invalid={!!getFieldError("city")}
+                    />
+                    {getFieldError("city") ? (
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <FiAlertCircle className="h-5 w-5 text-red-500" />
+                      </div>
+                    ) : (
+                      touched.city &&
+                      shippingAddress.city &&
+                      !errors.city && (
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <FiCheck className="h-5 w-5 text-green-500" />
+                        </div>
+                      )
+                    )}
+                    {getFieldError("city") && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <FiAlertCircle className="w-4 h-4 mr-1" />
+                        {errors.city}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="state"
+                      placeholder="State/Province *"
+                      value={shippingAddress.state}
+                      onChange={handleAddressChange}
+                      onBlur={handleBlur}
+                      className={getFieldClasses("state")}
+                      maxLength={50}
+                      aria-invalid={!!getFieldError("state")}
+                    />
+                    {getFieldError("state") ? (
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <FiAlertCircle className="h-5 w-5 text-red-500" />
+                      </div>
+                    ) : (
+                      touched.state &&
+                      shippingAddress.state &&
+                      !errors.state && (
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <FiCheck className="h-5 w-5 text-green-500" />
+                        </div>
+                      )
+                    )}
+                    {getFieldError("state") && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <FiAlertCircle className="w-4 h-4 mr-1" />
+                        {errors.state}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="zipCode"
+                      placeholder="ZIP/Postal Code *"
+                      value={shippingAddress.zipCode}
+                      onChange={handleAddressChange}
+                      onBlur={handleBlur}
+                      className={getFieldClasses("zipCode")}
+                      maxLength={10}
+                      aria-invalid={!!getFieldError("zipCode")}
+                    />
+                    {getFieldError("zipCode") ? (
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <FiAlertCircle className="h-5 w-5 text-red-500" />
+                      </div>
+                    ) : (
+                      touched.zipCode &&
+                      shippingAddress.zipCode &&
+                      !errors.zipCode && (
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          <FiCheck className="h-5 w-5 text-green-500" />
+                        </div>
+                      )
+                    )}
+                    {getFieldError("zipCode") && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <FiAlertCircle className="w-4 h-4 mr-1" />
+                        {errors.zipCode}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <select
+                      name="country"
+                      value={shippingAddress.country}
+                      onChange={handleAddressChange}
+                      onBlur={handleBlur}
+                      className={getFieldClasses("country")}
+                      aria-invalid={!!getFieldError("country")}
+                    >
+                      <option value="">Select Country *</option>
+                      <option value="United States">United States</option>
+                      <option value="Canada">Canada</option>
+                      <option value="United Kingdom">United Kingdom</option>
+                      <option value="Australia">Australia</option>
+                      <option value="Egypt">Egypt</option>
+                    </select>
+                    {getFieldError("country") && (
+                      <p className="mt-1 text-sm text-red-600 flex items-center">
+                        <FiAlertCircle className="w-4 h-4 mr-1" />
+                        {errors.country}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -242,14 +566,22 @@ export default function Checkout() {
 
                 <div className="space-y-3">
                   {[
-                    { value: "credit-card", label: "Credit/Debit Card" },
-                    { value: "paypal", label: "PayPal" },
-                    { value: "apple-pay", label: "Apple Pay" },
-                    { value: "google-pay", label: "Google Pay" },
+                    {
+                      value: "credit-card",
+                      label: "Credit/Debit Card",
+                      icon: "💳",
+                    },
+                    { value: "paypal", label: "PayPal", icon: "🟦" },
+                    { value: "apple-pay", label: "Apple Pay", icon: "🍎" },
+                    { value: "google-pay", label: "Google Pay", icon: "🟢" },
                   ].map((option) => (
                     <label
                       key={option.value}
-                      className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+                      className={`flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors ${
+                        paymentMethod === option.value
+                          ? "border-yellow-500 bg-yellow-50"
+                          : "border-gray-200"
+                      }`}
                     >
                       <input
                         type="radio"
@@ -257,16 +589,17 @@ export default function Checkout() {
                         value={option.value}
                         checked={paymentMethod === option.value}
                         onChange={(e) => setPaymentMethod(e.target.value)}
-                        className="mr-3"
+                        className="mr-3 text-yellow-600 focus:ring-yellow-500"
                       />
-                      <span>{option.label}</span>
+                      <span className="mr-2 text-lg">{option.icon}</span>
+                      <span className="font-medium">{option.label}</span>
                     </label>
                   ))}
                 </div>
 
                 <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-800">
-                    <FiLock className="inline w-4 h-4 mr-1" />
+                  <p className="text-sm text-blue-800 flex items-center">
+                    <FiLock className="inline w-4 h-4 mr-2" />
                     This is a demo checkout. No actual payment will be
                     processed.
                   </p>
@@ -274,24 +607,36 @@ export default function Checkout() {
               </div>
 
               {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isProcessing}
-                className={`w-full py-4 px-6 rounded-lg font-semibold text-lg transition-colors ${
-                  isProcessing
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                    : "bg-yellow-400 hover:bg-yellow-500 text-black"
-                }`}
-              >
-                {isProcessing ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600 mr-2"></div>
-                    Processing Order...
+              <div className="space-y-4">
+                {!isFormValid && Object.keys(touched).length > 0 && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-800 flex items-center">
+                      <FiAlertCircle className="w-4 h-4 mr-2" />
+                      Please complete all required fields and fix any errors
+                      before placing your order.
+                    </p>
                   </div>
-                ) : (
-                  `Place Order - $${total.toFixed(2)}`
                 )}
-              </button>
+
+                <button
+                  type="submit"
+                  disabled={isProcessing || !isFormValid}
+                  className={`w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all ${
+                    isProcessing || !isFormValid
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-yellow-400 hover:bg-yellow-500 text-black shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  }`}
+                >
+                  {isProcessing ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600 mr-2"></div>
+                      Processing Order...
+                    </div>
+                  ) : (
+                    `Place Order - $${total.toFixed(2)}`
+                  )}
+                </button>
+              </div>
             </form>
           </div>
 
@@ -356,6 +701,14 @@ export default function Checkout() {
                     <span>${total.toFixed(2)}</span>
                   </div>
                 </div>
+              </div>
+
+              {/* Security Badge */}
+              <div className="mt-6 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800 flex items-center">
+                  <FiLock className="w-4 h-4 mr-2" />
+                  Your order is secured with 256-bit SSL encryption
+                </p>
               </div>
             </div>
           </div>

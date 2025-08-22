@@ -3,29 +3,120 @@ import { useNavigate, Link } from "react-router-dom";
 import { UserContext } from "../context/userContext/user.context";
 import "../styles/index.css";
 import { loginUser } from "../utils/api";
+import { FiAlertCircle, FiEye, FiEyeOff } from "react-icons/fi";
 
 function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useContext(UserContext);
   const navigate = useNavigate();
 
+  // Validation patterns
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const validateField = (name, value) => {
+    const newErrors = { ...errors };
+
+    switch (name) {
+      case "email":
+        if (!value.trim()) {
+          newErrors.email = "Email is required";
+        } else if (!emailRegex.test(value)) {
+          newErrors.email = "Please enter a valid email address";
+        } else {
+          delete newErrors.email;
+        }
+        break;
+
+      case "password":
+        if (!value) {
+          newErrors.password = "Password is required";
+        } else if (value.length < 6) {
+          newErrors.password = "Password must be at least 6 characters";
+        } else {
+          delete newErrors.password;
+        }
+        break;
+
+      default:
+        break;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // Real-time validation for touched fields
+    if (touched[name]) {
+      validateField(name, value);
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    setTouched((prev) => ({ ...prev, [name]: true }));
+    validateField(name, value);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+
+    // Mark all fields as touched
+    const allTouched = Object.keys(formData).reduce((acc, key) => {
+      acc[key] = true;
+      return acc;
+    }, {});
+    setTouched(allTouched);
+
+    // Validate all fields
+    let isValid = true;
+    Object.keys(formData).forEach((key) => {
+      if (!validateField(key, formData[key])) {
+        isValid = false;
+      }
+    });
+
+    if (!isValid) return;
+
     setIsLoading(true);
 
     try {
-      const response = await loginUser({ email, password });
+      const response = await loginUser(formData);
       login(response.token, response.user);
       navigate("/");
     } catch (err) {
-      setError(err.response?.data?.message || "Invalid email or password");
+      setErrors({
+        submit: err.response?.data?.message || "Invalid email or password",
+      });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getFieldError = (fieldName) => {
+    return touched[fieldName] && errors[fieldName];
+  };
+
+  const getFieldClasses = (fieldName) => {
+    const baseClasses =
+      "appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none sm:text-sm";
+    const hasError = getFieldError(fieldName);
+
+    if (hasError) {
+      return `${baseClasses} border-red-300 text-red-900 placeholder-red-300 focus:ring-red-500 focus:border-red-500`;
+    }
+
+    return `${baseClasses} border-gray-300 focus:ring-yellow-500 focus:border-yellow-500`;
   };
 
   return (
@@ -44,32 +135,53 @@ function Login() {
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-gray-300">
           <h2 className="text-3xl font-medium text-gray-900 mb-6">Sign in</h2>
 
-          {error && (
-            <div className="mb-4 p-2 bg-red-50 text-red-600 text-sm rounded">
-              {error}
+          {errors.submit && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded flex items-center">
+              <FiAlertCircle className="w-4 h-4 mr-2 flex-shrink-0" />
+              {errors.submit}
             </div>
           )}
 
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <form className="space-y-4" onSubmit={handleSubmit} noValidate>
             <div>
               <label
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700"
               >
-                Email or mobile phone number
+                Email or mobile phone number{" "}
+                <span className="text-red-500">*</span>
               </label>
-              <div className="mt-1">
+              <div className="mt-1 relative">
                 <input
                   id="email"
                   name="email"
                   type="email"
                   autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+                  value={formData.email}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={getFieldClasses("email")}
+                  placeholder="Enter your email"
+                  aria-invalid={!!getFieldError("email")}
+                  aria-describedby={
+                    getFieldError("email") ? "email-error" : undefined
+                  }
                 />
+                {getFieldError("email") && (
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <FiAlertCircle className="h-5 w-5 text-red-500" />
+                  </div>
+                )}
               </div>
+              {getFieldError("email") && (
+                <p
+                  id="email-error"
+                  className="mt-2 text-sm text-red-600 flex items-center"
+                >
+                  <FiAlertCircle className="w-4 h-4 mr-1" />
+                  {errors.email}
+                </p>
+              )}
             </div>
 
             <div>
@@ -77,21 +189,45 @@ function Login() {
                 htmlFor="password"
                 className="block text-sm font-medium text-gray-700"
               >
-                Password
+                Password <span className="text-red-500">*</span>
               </label>
-              <div className="mt-1">
+              <div className="mt-1 relative">
                 <input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={6}
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-yellow-500 focus:border-yellow-500 sm:text-sm"
+                  value={formData.password}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={getFieldClasses("password")}
+                  placeholder="Enter your password"
+                  aria-invalid={!!getFieldError("password")}
+                  aria-describedby={
+                    getFieldError("password") ? "password-error" : undefined
+                  }
                 />
+                <button
+                  type="button"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <FiEyeOff className="h-5 w-5 text-gray-400" />
+                  ) : (
+                    <FiEye className="h-5 w-5 text-gray-400" />
+                  )}
+                </button>
               </div>
+              {getFieldError("password") && (
+                <p
+                  id="password-error"
+                  className="mt-2 text-sm text-red-600 flex items-center"
+                >
+                  <FiAlertCircle className="w-4 h-4 mr-1" />
+                  {errors.password}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-between">
@@ -123,9 +259,11 @@ function Login() {
             <div>
               <button
                 type="submit"
-                disabled={isLoading}
-                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-yellow-400 hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 ${
-                  isLoading ? "opacity-70 cursor-not-allowed" : ""
+                disabled={isLoading || Object.keys(errors).length > 0}
+                className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 ${
+                  isLoading || Object.keys(errors).length > 0
+                    ? "bg-gray-300 cursor-not-allowed"
+                    : "bg-yellow-400 hover:bg-yellow-500"
                 }`}
               >
                 {isLoading ? "Signing in..." : "Sign in"}
