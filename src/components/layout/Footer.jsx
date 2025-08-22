@@ -4,11 +4,14 @@ function Footer() {
   return (
     <div className=" bg-white">
       {/* Back to Top */}
-      <div className="bg-[#37475a] text-white text-center py-4 sm:py-5 cursor-pointer hover:bg-[#485769] transition-colors relative z-10">
-        <a href="#head" className="inline-block py-2 px-4 hover:underline">
+      <a
+        href="#head"
+        className="bg-[#37475a] text-white text-center py-4 sm:py-5 cursor-pointer hover:bg-[#485769] transition-colors relative z-10"
+      >
+        <div className="inline-block py-2 px-4">
           <span className="text-sm sm:text-base lg:text-lg">Back to Top</span>
-        </a>
-      </div>
+        </div>
+      </a>
 
       <footer className="bg-[#232f3e] text-white relative z-10">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 py-8 sm:py-10 lg:py-12">
