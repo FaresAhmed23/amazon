@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef } from "react";
 import {
   FiUser,
   FiMail,
@@ -15,6 +15,8 @@ import toast from "react-hot-toast";
 
 export default function Profile() {
   const { user, login } = useContext(UserContext);
+  const fileInputRef = useRef(null);
+
   const [profile, setProfile] = useState({
     name: "",
     email: "",
