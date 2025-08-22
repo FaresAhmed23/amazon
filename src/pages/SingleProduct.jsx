@@ -519,11 +519,26 @@ function SingleProduct() {
                 to={`/product/${relatedProduct.id}`}
                 className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all duration-200 hover:border-gray-300 group"
               >
-                <div className="aspect-square bg-gray-50 rounded mb-3 overflow-hidden">
+                <div className="aspect-square bg-gray-50 rounded mb-3 overflow-hidden flex items-center justify-center">
                   <img
                     src={relatedProduct.image}
                     alt={relatedProduct.title}
                     className="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-200"
+                    onError={(e) => {
+                      console.log(
+                        `Image failed to load for product ${relatedProduct.id}:`,
+                        relatedProduct.image
+                      );
+                      e.target.src =
+                        "https://via.placeholder.com/200x200?text=Product+Image";
+                      e.target.onerror = null; // Prevent infinite loop
+                    }}
+                    onLoad={(e) => {
+                      console.log(
+                        `Image loaded successfully for product ${relatedProduct.id}`
+                      );
+                    }}
+                    loading="lazy"
                   />
                 </div>
                 <p className="text-sm text-gray-800 line-clamp-2 mb-2 leading-tight">
