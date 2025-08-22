@@ -8,7 +8,7 @@ function Footer() {
         href="#head"
         className="bg-[#37475a] text-white text-center py-4 sm:py-5 cursor-pointer hover:bg-[#485769] transition-colors relative z-10 w-full"
       >
-        <div className="py-2 px-4">
+        <div className="inline-block py-2 px-4 w-full">
           <span className="text-sm sm:text-base lg:text-lg">Back to Top</span>
         </div>
       </a>

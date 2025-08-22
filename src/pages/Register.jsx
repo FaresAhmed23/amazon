@@ -21,7 +21,7 @@ function Register() {
 
   // Validation patterns
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const phoneRegex = /^01[0-2]\s\d{1,8}$/;
+  const phoneRegex = /^(\+?20)?(01)[0125][0-9]{8}$/;
   const nameRegex = /^[a-zA-Z\s]{2,50}$/;
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/;
 
