@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef } from "react";
+import { useState, useEffect, useContext } from "react";
 import {
   FiUser,
   FiMail,
@@ -8,8 +8,6 @@ import {
   FiCamera,
   FiAlertCircle,
   FiCheck,
-  FiUpload,
-  FiX,
 } from "react-icons/fi";
 import { getUserProfile, updateUserProfile } from "../utils/api";
 import { UserContext } from "../context/userContext/user.context";
@@ -17,8 +15,6 @@ import toast from "react-hot-toast";
 
 export default function Profile() {
   const { user, login } = useContext(UserContext);
-  const fileInputRef = useRef(null);
-
   const [profile, setProfile] = useState({
     name: "",
     email: "",
@@ -37,23 +33,10 @@ export default function Profile() {
       language: "en",
     },
   });
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [photoError, setPhotoError] = useState("");
-
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
-
-  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-  const ALLOWED_FILE_TYPES = [
-    "image/jpeg",
-    "image/jpg",
-    "image/png",
-    "image/webp",
-  ];
 
   // Validation patterns
   const nameRegex = /^[a-zA-Z\s]{2,50}$/;
@@ -68,14 +51,6 @@ export default function Profile() {
     fetchProfile();
   }, []);
 
-  useEffect(() => {
-    return () => {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-    };
-  }, [previewUrl]);
-
   const fetchProfile = async () => {
     try {
       const data = await getUserProfile();
@@ -86,119 +61,6 @@ export default function Profile() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const validateFile = (file) => {
-    if (!file) {
-      return "Please select a file";
-    }
-
-    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      return "Please select a valid image file (JPEG, PNG, WebP)";
-    }
-
-    if (file.size > MAX_FILE_SIZE) {
-      return "File size must be less than 5MB";
-    }
-
-    return null;
-  };
-
-  // Handle file selection
-  const handleFileSelect = (e) => {
-    const file = e.target.files[0];
-    setPhotoError("");
-
-    if (!file) {
-      setSelectedFile(null);
-      setPreviewUrl(null);
-      return;
-    }
-
-    const error = validateFile(file);
-    if (error) {
-      setPhotoError(error);
-      setSelectedFile(null);
-      setPreviewUrl(null);
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-      return;
-    }
-
-    setSelectedFile(file);
-
-    // Create preview URL
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-    const newPreviewUrl = URL.createObjectURL(file);
-    setPreviewUrl(newPreviewUrl);
-  };
-
-  // Handle photo upload
-  const handlePhotoUpload = async () => {
-    if (!selectedFile) {
-      toast.error("Please select a photo first");
-      return;
-    }
-
-    setUploadingPhoto(true);
-    setPhotoError("");
-
-    try {
-      const formData = new FormData();
-      formData.append("profilePicture", selectedFile);
-
-      const response = await uploadProfilePicture(formData);
-
-      // Update profile state with new avatar URL
-      setProfile((prev) => ({
-        ...prev,
-        avatar: response.avatar,
-      }));
-
-      // Update user context
-      const token = localStorage.getItem("token");
-      login(token, { ...user, avatar: response.avatar });
-
-      // Clear selected file and preview
-      setSelectedFile(null);
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-        setPreviewUrl(null);
-      }
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-
-      toast.success("Profile picture updated successfully!");
-    } catch (error) {
-      console.error("Error uploading photo:", error);
-      setPhotoError(error.response?.data?.message || "Failed to upload photo");
-      toast.error("Failed to upload photo");
-    } finally {
-      setUploadingPhoto(false);
-    }
-  };
-
-  // Handle photo removal
-  const handlePhotoRemove = () => {
-    setSelectedFile(null);
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-    }
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-    setPhotoError("");
-  };
-
-  // Trigger file input
-  const triggerFileInput = () => {
-    fileInputRef.current?.click();
   };
 
   const validateField = (name, value) => {
@@ -369,6 +231,7 @@ export default function Profile() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Mark all required fields as touched
     const requiredFields = [
       "name",
       "email",
@@ -386,6 +249,7 @@ export default function Profile() {
     });
     setTouched(allTouched);
 
+    // Validate all required fields
     let isValid = true;
     requiredFields.forEach((field) => {
       const value = getNestedValue(profile, field);
@@ -404,6 +268,7 @@ export default function Profile() {
     try {
       const response = await updateUserProfile(profile);
 
+      // Update user context with new data
       const token = localStorage.getItem("token");
       login(token, response.user);
 
@@ -418,7 +283,7 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <div className="min-h-dvh bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <FiUser className="w-12 h-12 mx-auto text-gray-400 mb-4 animate-pulse" />
           <p>Loading profile...</p>
@@ -430,7 +295,7 @@ export default function Profile() {
   const isFormValid = Object.keys(errors).length === 0;
 
   return (
-    <div className="min-h-dvh bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4">
         <div className="bg-white rounded-lg shadow-sm">
           {/* Header */}
@@ -442,116 +307,29 @@ export default function Profile() {
           <form onSubmit={handleSubmit} noValidate>
             <div className="p-6 space-y-8">
               {/* Profile Picture Section */}
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Profile Picture
-                </h3>
-
-                <div className="flex items-start space-x-6">
-                  <div className="relative">
-                    <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden">
-                      {previewUrl || profile.avatar ? (
-                        <img
-                          src={previewUrl || profile.avatar}
-                          alt="Profile"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <FiUser className="w-12 h-12 text-gray-400" />
-                      )}
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={triggerFileInput}
-                      disabled={uploadingPhoto}
-                      className="absolute bottom-0 right-0 bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-300 rounded-full p-2 shadow-sm transition-colors"
-                      aria-label="Change profile picture"
-                    >
-                      <FiCamera className="w-4 h-4" />
-                    </button>
+              <div className="flex items-center space-x-6">
+                <div className="relative">
+                  <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center">
+                    <FiUser className="w-12 h-12 text-gray-400" />
                   </div>
-
-                  <div className="flex-1">
-                    <div className="space-y-2">
-                      <h4 className="text-lg font-medium text-gray-900">
-                        {profile.name}
-                      </h4>
-                      <p className="text-gray-600">{profile.email}</p>
-
-                      {/* File Input */}
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept={ALLOWED_FILE_TYPES.join(",")}
-                        onChange={handleFileSelect}
-                        className="hidden"
-                        aria-label="Select profile picture"
-                      />
-
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        <button
-                          type="button"
-                          onClick={triggerFileInput}
-                          disabled={uploadingPhoto}
-                          className="text-sm text-blue-600 hover:text-blue-700 hover:underline disabled:text-gray-400 flex items-center gap-1"
-                        >
-                          <FiUpload className="w-4 h-4" />
-                          Choose Photo
-                        </button>
-
-                        {selectedFile && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={handlePhotoUpload}
-                              disabled={uploadingPhoto}
-                              className="text-sm bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-3 py-1 rounded-md transition-colors flex items-center gap-1"
-                            >
-                              <FiCheck className="w-4 h-4" />
-                              {uploadingPhoto ? "Uploading..." : "Upload"}
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={handlePhotoRemove}
-                              disabled={uploadingPhoto}
-                              className="text-sm bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-3 py-1 rounded-md transition-colors flex items-center gap-1"
-                            >
-                              <FiX className="w-4 h-4" />
-                              Cancel
-                            </button>
-                          </>
-                        )}
-                      </div>
-
-                      {/* Selected file info */}
-                      {selectedFile && (
-                        <div className="text-sm text-gray-600 mt-2">
-                          <p>Selected: {selectedFile.name}</p>
-                          <p>
-                            Size: {(selectedFile.size / 1024 / 1024).toFixed(2)}{" "}
-                            MB
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Photo error */}
-                      {photoError && (
-                        <div className="text-sm text-red-600 mt-2 flex items-center gap-1">
-                          <FiAlertCircle className="w-4 h-4" />
-                          {photoError}
-                        </div>
-                      )}
-
-                      {/* Upload guidelines */}
-                      <div className="text-xs text-gray-500 mt-2">
-                        <p>Supported formats: JPEG, PNG, WebP</p>
-                        <p>Maximum file size: 5MB</p>
-                        <p>Recommended: 400x400 pixels or larger</p>
-                      </div>
-                    </div>
-                  </div>
+                  <button
+                    type="button"
+                    className="absolute bottom-0 right-0 bg-yellow-400 hover:bg-yellow-500 rounded-full p-2 shadow-sm"
+                  >
+                    <FiCamera className="w-4 h-4" />
+                  </button>
+                </div>
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    {profile.name}
+                  </h3>
+                  <p className="text-gray-600">{profile.email}</p>
+                  <button
+                    type="button"
+                    className="mt-2 text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                  >
+                    Change photo
+                  </button>
                 </div>
               </div>
 
@@ -974,9 +752,9 @@ export default function Profile() {
             <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
               <button
                 type="submit"
-                disabled={saving || !isFormValid || uploadingPhoto}
+                disabled={saving || !isFormValid}
                 className={`flex items-center space-x-2 px-6 py-2 rounded-lg font-medium transition-colors ${
-                  saving || !isFormValid || uploadingPhoto
+                  saving || !isFormValid
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-yellow-400 hover:bg-yellow-500 text-black"
                 }`}

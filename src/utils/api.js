@@ -304,27 +304,3 @@ export const validateResetToken = async (resetToken) => {
     throw error;
   }
 };
-
-export const uploadProfilePicture = async (formData) => {
-  const token = localStorage.getItem("token");
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/user/upload-avatar`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Upload failed");
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error("Upload profile picture error:", error);
-    throw error;
-  }
-};
