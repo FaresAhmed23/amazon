@@ -534,17 +534,6 @@ function Register() {
           <hr />
 
           <div className="mt-4 mb-4">
-            <p className="font-base text-gray-600 font-semibold">
-              Buying for work?
-            </p>
-            <p className="text-blue-500 hover:underline text-sm cursor-pointer">
-              Create a free business account
-            </p>
-          </div>
-
-          <hr />
-
-          <div className="mt-4 mb-4">
             <p className="text-sm text-gray-600">
               Already have an account?{" "}
               <span

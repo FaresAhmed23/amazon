@@ -6,7 +6,7 @@ function Footer() {
       {/* Back to Top */}
       <a
         href="#head"
-        className="bg-[#37475a] text-white text-center py-4 sm:py-5 cursor-pointer hover:bg-[#485769] transition-colors relative z-10"
+        className="bg-[#37475a] text-white text-center py-4 sm:py-5 cursor-pointer hover:bg-[#485769] transition-colors relative z-10 w-full"
       >
         <div className="inline-block py-2 px-4">
           <span className="text-sm sm:text-base lg:text-lg">Back to Top</span>
