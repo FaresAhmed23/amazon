@@ -36,8 +36,8 @@ export default function Checkout() {
 
   // Validation patterns
   const nameRegex = /^[a-zA-Z\s]{2,50}$/;
-  const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-  const zipRegex = /^[0-9]{5}(-[0-9]{4})?$/; // US ZIP code format
+  const phoneRegex = /^(\+?20)?(01)[0125][0-9]{8}$/;
+  const zipRegex = /^[0-9]{5}(-[0-9]{4})?$/;
 
   const validateField = (name, value) => {
     const newErrors = { ...errors };
